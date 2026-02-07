@@ -43,12 +43,13 @@ async def _execute_with_fresh_client[T](
         client_state = create_client_state(
             discord_ctx.config.email, discord_ctx.config.password, True
         )
+        updated_state = client_state
         try:
-            _, result = await operation(client_state)
+            updated_state, result = await operation(client_state)
             return result
         finally:
             logger.debug("Cleaning up browser resources")
-            await close_client(client_state)
+            await close_client(updated_state)
 
 
 mcp = FastMCP("discord-mcp", lifespan=discord_lifespan)
