@@ -14,3 +14,6 @@ wheels/
 
 # Logs
 *.log
+
+# Discord cookie state (contains session credentials)
+.discord_mcp_cookies.json

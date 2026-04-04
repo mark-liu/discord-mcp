@@ -1,9 +1,22 @@
 import asyncio
+import os
 import pathlib as pl
+import re
 from datetime import datetime, timezone
 import dataclasses as dc
 from playwright.async_api import async_playwright, Browser, Page, Playwright
 from .logger import logger
+
+
+def _validate_discord_id(value: str, name: str) -> str:
+    """Validate that a Discord ID is a numeric string (1-20 digits).
+
+    Discord snowflake IDs are unsigned 64-bit integers, so at most 20 digits.
+    Rejects anything that could be used for path traversal or JS injection.
+    """
+    if not re.match(r"^\d{1,20}$", value):
+        raise ValueError(f"Invalid {name}: must be numeric, got {value!r}")
+    return value
 
 
 @dc.dataclass(frozen=True)
@@ -74,6 +87,7 @@ async def _ensure_browser(state: ClientState) -> ClientState:
 async def _save_storage_state(state: ClientState) -> None:
     if state.page:
         await state.page.context.storage_state(path=str(state.cookies_file))
+        os.chmod(str(state.cookies_file), 0o600)
 
 
 async def _check_logged_in(state: ClientState) -> bool:
@@ -279,6 +293,7 @@ async def get_guilds(state: ClientState) -> tuple[ClientState, list[DiscordGuild
 async def get_guild_channels(
     state: ClientState, guild_id: str
 ) -> tuple[ClientState, list[DiscordChannel]]:
+    _validate_discord_id(guild_id, "guild_id")
     state = await _login(state)
     if not state.page:
         raise RuntimeError("Browser page not initialized")
@@ -436,6 +451,8 @@ async def get_channel_messages(
     before: str | None = None,
     after: str | None = None,
 ) -> tuple[ClientState, list[DiscordMessage]]:
+    _validate_discord_id(server_id, "server_id")
+    _validate_discord_id(channel_id, "channel_id")
     state = await _login(state)
     if not state.page:
         raise RuntimeError("Browser page not initialized")
@@ -494,6 +511,8 @@ async def get_channel_messages(
 async def send_message(
     state: ClientState, server_id: str, channel_id: str, content: str
 ) -> tuple[ClientState, str]:
+    _validate_discord_id(server_id, "server_id")
+    _validate_discord_id(channel_id, "channel_id")
     state = await _login(state)
     if not state.page:
         raise RuntimeError("Browser page not initialized")

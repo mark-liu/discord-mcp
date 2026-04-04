@@ -1,4 +1,5 @@
 import os
+import re
 import typing as tp
 from pathlib import Path
 from dotenv import load_dotenv
@@ -30,6 +31,9 @@ def load_config() -> DiscordConfig:
 
     guild_ids_str = os.getenv("DISCORD_GUILD_IDS", "")
     guild_ids = [gid.strip() for gid in guild_ids_str.split(",") if gid.strip()]
+    for gid in guild_ids:
+        if not re.match(r"^\d{1,20}$", gid):
+            raise ValueError(f"Invalid guild ID in DISCORD_GUILD_IDS: {gid!r}")
 
     max_messages = int(os.getenv("MAX_MESSAGES_PER_CHANNEL", "200"))
     hours_back = int(os.getenv("DEFAULT_HOURS_BACK", "24"))

@@ -12,6 +12,7 @@ from .client import (
     get_guild_channels,
     send_message as send_discord_message,
     close_client,
+    _validate_discord_id,
 )
 from .config import load_config
 from .messages import read_recent_messages
@@ -68,6 +69,7 @@ async def get_servers() -> list[dict[str, str]]:
 @mcp.tool()
 async def get_channels(server_id: str) -> list[dict[str, str]]:
     """List all channels in a specific Discord server"""
+    _validate_discord_id(server_id, "server_id")
     ctx = mcp.get_context()
     discord_ctx = tp.cast(DiscordContext, ctx.request_context.lifespan_context)
 
@@ -83,6 +85,8 @@ async def read_messages(
     server_id: str, channel_id: str, max_messages: int, hours_back: int = 24
 ) -> list[dict[str, tp.Any]]:
     """Read recent messages from a specific channel"""
+    _validate_discord_id(server_id, "server_id")
+    _validate_discord_id(channel_id, "channel_id")
     if not (1 <= hours_back <= 8760):
         raise ValueError("hours_back must be between 1 and 8760 (1 year)")
     if not (1 <= max_messages <= 1000):
@@ -114,6 +118,8 @@ async def send_message(
     server_id: str, channel_id: str, content: str
 ) -> dict[str, tp.Any]:
     """Send a message to a specific Discord channel. Long messages are automatically split."""
+    _validate_discord_id(server_id, "server_id")
+    _validate_discord_id(channel_id, "channel_id")
     if len(content) == 0:
         raise ValueError("Message content cannot be empty")
 
